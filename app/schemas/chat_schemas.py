@@ -14,8 +14,12 @@ class Chat(BaseModel):
     id: Annotated[str, Field(description="Identificar do chat")]
     
 class Message(BaseModel):
-    chat: Annotated[Chat, Field(description="Objeto com as informações a respeito")]
-    text: Annotated[Optional[str], Field(description="Objeto contendo as informações a respeito da mensagem")]
+    chat: Annotated[Chat, Field(..., description="Objeto com as informações a respeito")]
+    text: Annotated[Optional[str], Field(None, description="Objeto contendo as informações a respeito da mensagem")]
     
 class TelegramUpdateData(BaseModel):
-    message: Annotated[dict, Field(description="Dados da mensagem")]
+    message: Annotated[Message, Field(..., description="Dados da mensagem")]
+
+class SendMessage(BaseModel):
+    chat_id: Annotated[str, Field(..., description="Identificação do chat para o qual o bot vai responder.")]
+    text: Annotated[str, Field(..., description="Texto da mensagem enviada")]
