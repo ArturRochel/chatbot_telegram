@@ -1,7 +1,15 @@
-from .chat_schemas import TelegramUpdateData, UseSession, SendMessage
+from .chat_schemas import (
+    UseSession,
+    WebhookTelegram,
+    SaidaTelegram,
+    WebhookWhatsapp,
+    SaidaWhatsApp
+)
 
 __all__ = [
-    "TelegramUpdateData",
     "UseSession",
-    "SendMessage"
+    "WebhookTelegram",
+    "SaidaTelegram",
+    "WebhookWhatsapp",
+    "SaidaWhatsApp"
 ]
