@@ -1,3 +1,4 @@
+from loguru import logger
 from typing import Annotated
 from fastapi import Depends
 from app.repositories import RepositoryRedis
@@ -27,9 +28,10 @@ class MachineState():
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }
             await self.repository.save_session(chave=chave_redis, session=session)
+            logger.info(f"Nova sessão criada para o usuário {usuario} no serviço {api_origem}")
             
         if session["status"] == "INICIAL":
-            response_message = "Olá! Bem vindo ao chat de dúvidas da SEFAZ-RN. Escolha uma das opção a baixo para continuar:\n1 - Consulta de NFE\n2 - Consulta de CNPJ\n3 - Ajustes SIGEFE\n4 - Falar com um atendente"
+            response_message = "Olá! Bem vindo ao chat de dúvidas e consultas da SEFAZ-RN. Para iniciar o atendimento, escolha uma das opções a baixo para continuar:\n1 - Consulta de Saldo \n2 - Ressarcimento de Contas \n3 - Sistema SIGEF \n4 - Alteração de Contas \n5 - Consulta de CNPJ"
             session["status"] = "AGUARDANDO_OPCAO_1"
         elif session["status"] == "AGUARDANDO_OPCAO_1":
             if mensagem == "1":
