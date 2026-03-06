@@ -5,11 +5,13 @@ from .chat_schemas import (
     WebhookWhatsapp,
     SaidaWhatsApp
 )
+from .message_schema import (MessageSendStatus)
 
 __all__ = [
     "UseSession",
     "WebhookTelegram",
     "SaidaTelegram",
     "WebhookWhatsapp",
-    "SaidaWhatsApp"
+    "SaidaWhatsApp",
+    "MessageSendStatus"
 ]
