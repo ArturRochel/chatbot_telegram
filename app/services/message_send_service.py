@@ -38,7 +38,6 @@ class MessageSendService:
     async def send_message_telegram(self, chat_id: str, message: str):
         #todo - A API do telegram utiliza a autenticação de token através da URL, então é preciso fazer a concatenação do token na URL
         headears = {
-            "Authorization": f"Bearer {self.credentials.TELEGRAM_TOKEN}",
             "Content-Type": "application/json"
         }
 
@@ -49,7 +48,7 @@ class MessageSendService:
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.post(self.credentials.TELEGRAM_API_URL)
+                response = await client.post(f"https://api.telegram.org/bot{self.credentials.TELEGRAM_TOKEN}/sendMessage")
 
                 response.raise_for_status()
 
