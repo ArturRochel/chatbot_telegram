@@ -20,12 +20,23 @@ class RepositoryRedis:
         return sessao_dict
 
     async def add_session(self, chave: str, sessao: dict):
-        sessao_string = json.dump(sessao)
+        sessao_string = json.dumps(sessao)
 
         await self.redis.set(chave, sessao_string, ex=86400)
 
     async def delete_session(self, chave=str):
-        pass
+        try:
+            await self.redis.delete(chave)
+        except Exception as e:
+            logger.error(f"Erro ao excluir sessão {chave}. Erro: {e}")
+            raise 
+        
 
-    async def edit_session(self, chave=str):
-        pass
+    async def edit_session(self, chave:str, novos_dados:dict):
+        sessao_atual = await self.get_session(chave=chave)
+
+        if sessao_atual:
+            sessao_atual.update(novos_dados)
+            await self.add_session(chave, sessao_atual)
+        else:
+            logger.warning(f"Tentativa de editar uma sessão inexistente. Sessão: {chave}")
