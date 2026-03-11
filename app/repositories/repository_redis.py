@@ -1,9 +1,11 @@
+from app.schemas import UserSession
 import json
 import redis.asyncio as redis
 from fastapi import Depends
 from typing import Annotated
 from app.core import get_redis
 from loguru import logger
+from app.schemas import UserSession, FullSession
 
 class RepositoryRedis:
     def __init__(self, client_redis: Annotated[redis.Redis, Depends(get_redis)]):
@@ -27,7 +29,7 @@ class RepositoryRedis:
         except Exception as erro:
             logger.error(f"Erro na persistência Redis. Erro: {erro}")
 
-    async def get_session_and_history(self, chat_id: str, origin: str) -> dict | None:
+    async def get_session_and_history(self, chat_id: str, origin: str) -> FullSession | None:
         session_key = f"session:{origin}:{chat_id}"
         history_key = f"history:{origin}:{chat_id}"
 
@@ -43,14 +45,8 @@ class RepositoryRedis:
             history_data = [json.loads(message) for message in history_string_data]
         else:
             history_data = []
-        
 
-        result = {
-            "session": session_data,
-            "history": history_data
-        }
-
-        return result
+        return FullSession(session=UserSession(**session_data), history=history_data)
 
     async def add_session(self, chave: str, sessao: dict):
         sessao_string = json.dumps(sessao)

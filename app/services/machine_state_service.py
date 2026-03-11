@@ -4,7 +4,7 @@ from fastapi import Depends
 from app.repositories import RepositoryRedis
 from datetime import datetime, timezone
 from .message_send_service import MessageSendService
-from app.schemas import MessageSendStatus
+from app.schemas import MessageElement, FullSession, UserSession
 
 class MachineState():
 
@@ -15,12 +15,14 @@ class MachineState():
     async def handle_update(self, chat_id: str, message: str, origin_service: str):
         response_message = "Vazio"
         
-        #! Atualizar aqui também
-        result_session_query = await self.repository.get_full_session(chat_id=chat_id, origin=origin_service)
-        session = result_session_query["session"]
-        history = result_session_query["history"]
+        result_session_query = await self.repository.get_full_session(chat_id=chat_id, origin=origin_service) 
+
+        if result_session_query is not None:
+            session = result_session_query.session
+            history = result_session_query.history
         
         if not session:
+            #! IMPLEMENTAR USERSESSION (DADOS)
             session = {
                 "chat_id": chat_id, # Identificação do usuário
                 "status": "INICIAL", # Status da etapa
@@ -29,7 +31,7 @@ class MachineState():
                 "attempts": 0, # Tentativas 
                 "updated_at": datetime.now(timezone.utc).isoformat() # Última atualização de registro
             }
-
+            #! IMPLEMENTAR AQUI TAMBÉM
             history = [{"role": "user", "message": message}]
 
             # Cria a nova sessão e histórico

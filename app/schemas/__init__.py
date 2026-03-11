@@ -6,7 +6,8 @@ from .chat_schemas import (
     SaidaWhatsApp
 )
 from .message_schema import (MessageSendStatus)
-from .session_schema import (UserHistory, UserSession, FullSession)
+from .session_schema import (UserSession, FullSession, MessageElement)
+
 __all__ = [
     "UseSession",
     "WebhookTelegram",
@@ -16,5 +17,6 @@ __all__ = [
     "MessageSendStatus",
     "UserSession",
     "UserHistory",
-    "FullSession"
+    "FullSession",
+    "MessageElement"
 ]
