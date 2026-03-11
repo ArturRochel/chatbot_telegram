@@ -9,15 +9,48 @@ class RepositoryRedis:
     def __init__(self, client_redis: Annotated[redis.Redis, Depends(get_redis)]):
         self.redis = client_redis
 
-    async def get_session(self, chave: str):
+    async def save_session_and_history(self, chat_id:str, origin:str, session_data: dict, history_data: list):
+        session_key = f"session:{origin}:{chat_id}"
+        history_key = f"history:{origin}:{chat_id}"
+
+        serialized_history = [json.dumps(message) for message in history_data]
+
         try:
-            sessao = await self.redis.get(chave)
-        except Exception as e:
-            logger.error(f"Erro ao puxar sessão no Redis. Erro: {e}")
-            raise
+            await self.redis.hset(session_key, mapping=session_data)
+
+            if serialized_history:
+                await self.redis.rpush(history_key, *serialized_history)
+                await self.redis.ltrim(history_key, -20, -1)
+
+            await self.redis.expire(session_key, 86400)
+            await self.redis.expire(history_key, 86400)
+        except Exception as erro:
+            logger.error(f"Erro na persistência Redis. Erro: {erro}")
+
+    async def get_session_and_history(self, chat_id: str, origin: str) -> dict | None:
+        session_key = f"session:{origin}:{chat_id}"
+        history_key = f"history:{origin}:{chat_id}"
+
+        session_data, history_string_data = await asyncio.gather(
+            self.redis.hgetall(session_key),
+            self.redis.lrange(history_key, 0, -1)
+        )
+
+        if not session_data:
+            return None
+
+        if history_string_data:
+            history_data = [json.loads(message) for message in history_string_data]
+        else:
+            history_data = []
         
-        sessao_dict = json.loads(sessao)
-        return sessao_dict
+
+        result = {
+            "session": session_data,
+            "history": history_data
+        }
+
+        return result
 
     async def add_session(self, chave: str, sessao: dict):
         sessao_string = json.dumps(sessao)

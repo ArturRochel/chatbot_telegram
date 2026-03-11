@@ -18,21 +18,22 @@ class MachineState():
         api_origem = api # Serviço que enviou a mensagem (Telegram ou Whatsapp)
         response_message = "Vazio"
         
-        chave_redis = f"session:{api_origem}:{usuario}"
-        
-        session = await self.repository.get_session(chave=chave_redis)
+        #! Atualizar aqui também
+        session = await self.repository.get_full_session(chat_id=chat_id, origin=api_origem)
+        history = pass
         
         if not session:
             session = {
-                "chat_id": usuario,
-                "status": "INICIAL",
-                "service": api,
-                "context": "",
-                "history": [],
-                "attempts": 0,
-                "updated_at": datetime.now(timezone.utc).isoformat()
+                "chat_id": usuario, # Identificação do usuário
+                "status": "INICIAL", # Status da etapa
+                "origin_service": api, # Serviço de origem
+                "context": "", # Contexto dos menus
+                "attempts": 0, # Tentativas 
+                "updated_at": datetime.now(timezone.utc).isoformat() # Última atualização de registro
             }
-            await self.repository.save_session(chave=chave_redis, session=session)
+
+            
+            #! PRECISA ATUALIZAR PARA O NOVO MÉTODO DO REPOSITORY_REDIS
             logger.info(f"Nova sessão criada para o usuário {usuario} no serviço {api_origem}")
             
         if session["status"] == "INICIAL":
