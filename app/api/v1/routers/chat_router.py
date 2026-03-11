@@ -14,7 +14,7 @@ async def process_webhook_payload(service: machine_state, message_api: WebhookTe
     elif(api == "WHATSAPP"):
         chat_id, message = extract_whatsapp_data(data=message_api)
         
-    await service.handle_update(chat_id=chat_id, message=message, api=api)
+    await service.handle_update(chat_id=chat_id, message=message, origin_service=api)
     
 
 @chat_router.post("/telegram", tags=["Webhook"], summary="Rota de webhook para atualizações pela API do Telegram", description="Essa rota é responsável por receber as atualizações do sistema através da API oficial do Telegram, utilizando uma lógica de webhook.")
