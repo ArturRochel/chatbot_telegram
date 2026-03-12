@@ -1,24 +1,24 @@
-from app.schemas import UserSession
 import json
+import asyncio
 import redis.asyncio as redis
 from fastapi import Depends
 from typing import Annotated
 from app.core import get_redis
 from loguru import logger
-from app.schemas import UserSession, FullSession
+from app.schemas import UserSession, FullSession, MessageElement
 
 class RepositoryRedis:
     def __init__(self, client_redis: Annotated[redis.Redis, Depends(get_redis)]):
         self.redis = client_redis
 
-    async def save_session_and_history(self, chat_id:str, origin:str, session_data: dict, history_data: list):
+    async def save_session_and_history(self, chat_id:str, origin:str, session_data: UserSession, history_data: list[MessageElement]):
         session_key = f"session:{origin}:{chat_id}"
         history_key = f"history:{origin}:{chat_id}"
 
-        serialized_history = [json.dumps(message) for message in history_data]
+        serialized_history = [json.dumps(message.model_dump_json()) for message in history_data]
 
         try:
-            await self.redis.hset(session_key, mapping=session_data)
+            await self.redis.hset(session_key, mapping=session_data.model_dump(mode='json'))
 
             if serialized_history:
                 await self.redis.rpush(history_key, *serialized_history)
@@ -53,8 +53,15 @@ class RepositoryRedis:
 
         await self.redis.set(chave, sessao_string, ex=86400)
 
-    async def delete_session(self, chave=str):
+    async def delete_session_and_history(self, chat_id:str, origin_service:str):
+        session_key = f"session:{origin}:{chat_id}"
+        history_key = f"history:{origin}:{chat_id}"
+
         try:
+            await asyncio.gather(
+                self.redis.delete(session_key),
+                self.redis.delete(history_key)
+            )
             await self.redis.delete(chave)
         except Exception as e:
             logger.error(f"Erro ao excluir sessão {chave}. Erro: {e}")

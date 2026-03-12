@@ -10,10 +10,11 @@ class UserSession(BaseModel):
     attempts: Annotated[int, Field(default=0, description="Número de erros do usuário")]
     updated_at: Annotated[datetime.datetime, Field(default=None, description="Última atualização do usuário")]
 
+class MessageElement(BaseModel):
+    role: Annotated[str, Field(..., description="Quem enviou a mensagem")]
+    message: Annotated[str, Field(..., description="Mensagem enviada")]
+    
 class FullSession(BaseModel):
     session: Annotated[UserSession, Field(..., description="Sessão do usuário")]
     history: Annotated[list[MessageElement], Field(..., description="Histórico de mensagens do usuário")]
     
-class MessageElement(BaseModel):
-    role: Annotated[str, Field(..., description="Quem enviou a mensagem")]
-    message: Annotated[str, Field(..., description="Mensagem enviada")]
