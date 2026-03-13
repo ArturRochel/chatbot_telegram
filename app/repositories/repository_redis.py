@@ -15,7 +15,7 @@ class RepositoryRedis:
         session_key = f"session:{origin}:{chat_id}"
         history_key = f"history:{origin}:{chat_id}"
 
-        serialized_history = [json.dumps(message.model_dump_json()) for message in history_data]
+        serialized_history = [message.model_dump_json() for message in history_data]
 
         try:
             await self.redis.hset(session_key, mapping=session_data.model_dump(mode='json'))
@@ -42,7 +42,7 @@ class RepositoryRedis:
             return None
 
         if history_string_data:
-            history_data = [json.loads(message) for message in history_string_data]
+            history_data = [MessageElement(**json.loads(message)) for message in history_string_data]
         else:
             history_data = []
 

@@ -4,7 +4,13 @@ from fastapi import Depends
 from app.repositories import RepositoryRedis
 from datetime import datetime, timezone
 from .message_send_service import MessageSendService
-from app.schemas import MessageElement, FullSession, UserSession
+from app.schemas import MessageElement, UserSession
+
+# todo - CONTADOR DE ERROS E TRATATIVA
+# todo - ADIÇÃO DE CONTEXTO 
+# todo - CADASTRAR BOT
+# todo - IMPLEMENTAR NGROK
+# todo - TESTAR COM API OFICIAL
 
 class MachineState():
 
@@ -53,14 +59,17 @@ class MachineState():
                 response_message = "Você escolheu a opção de falar com um atendente. Por favor, aguarde enquanto conectamos você com um atendente disponível."
                 session.status = "AGUARDANDO_ATENDENTE"
             else:
+                session.attempts +=1
                 response_message = "Opção inválida. Por favor, escolha uma das opções abaixo:\n1 - Consulta de NFE\n2 - Consulta de CNPJ\n3 - Ajustes SIGEFE\n4 - Falar com um atendente"
         
         if origin_service == "TELEGRAM":
-            object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_message)
+            print(f"Histórico: {history} | TENTATIVAS: {session.attempts}")
+            logger.success(f"Mensagem Usuário: {message} | Resposta Bot: {response_message}")
+            # object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_message)
 
-            if not object_message.sucess:
-                logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
-                raise
+            # if not object_message.sucess:
+            #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
+            #     raise
 
         else:
             object_message = await self.send_service.send_message_whatsapp(chat_id=chat_id, message=response_message)

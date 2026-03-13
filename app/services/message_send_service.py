@@ -3,11 +3,11 @@ from loguru import logger
 from typing import Annotated
 from fastapi import Depends
 from app.repositories import RepositoryRedis
-from app.core.config import Settings
+from app.core.config import Settings, get_configs
 from app.schemas import MessageSendStatus
 
 class MessageSendService:
-    def __init__(self, repository: Annotated[RepositoryRedis, Depends()], credentials: Annotated[Settings, Depends()]):
+    def __init__(self, repository: Annotated[RepositoryRedis, Depends()], credentials: Annotated[Settings, Depends(get_configs)]):
         self.repository = repository
         self.credentials = credentials
 

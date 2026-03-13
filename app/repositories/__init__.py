@@ -1,6 +1,5 @@
-from .repository_redis import get_full_session, save_session_and_history
+from .repository_redis import RepositoryRedis
 
 __all__ = [
-    "get_full_session",
-    "save_session_and_history"
+    "RepositoryRedis"
 ]
