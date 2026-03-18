@@ -5,9 +5,8 @@ from app.repositories import RepositoryRedis
 from datetime import datetime, timezone
 from .message_send_service import MessageSendService
 from app.schemas import MessageElement, UserSession
+from app.utils import MENU_INICIAL, LIMITE_TENTATIVAS, OPCAO_INVALIDA_MENU
 
-# todo - MENU INICIAL
-# todo - CONTADOR DE ERROS E TRATATIVA
 # todo - ADIÇÃO DE CONTEXTO 
 # todo - CADASTRAR BOT
 # todo - IMPLEMENTAR NGROK
@@ -41,22 +40,28 @@ class MachineState():
         
             history = [MessageElement(role="user", message=message)]
               
-            
+        if session.attempts >= 3:
+                session.status = "INICIAL"
+                session.attempts = 0
+
+                response_erro = f"{LIMITE_TENTATIVAS} \n {MENU_INICIAL}"
+
+                #! Enviar mensagem para o usuário
+                # object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_erro)
+
+                # if not object_message.sucess:
+                #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
+                #     raise
+
+                history.append(MessageElement(role="bot", message=response_erro))
+                await self.repository.save_session_and_history(chat_id=chat_id, origin=origin_service, session_data=session, history_data=history)  
+
+                return
+
+
+
         if session.status == "INICIAL":
-            response_message = (
-                "🔹 **IDENTIFICAÇÃO DO ASSUNTO**\n"
-                "Olá! Bem-vindo ao chat da SEFAZ-RN. Escolha a opção que melhor representa sua dúvida:\n\n"
-                "1 - Classificação contábil e orçamentária\n"
-                "2 - Execução da despesa\n"
-                "3 - Conciliação Bancária e registros de entrada\n"
-                "4 - Pagamentos (PP, OB)\n"
-                "5 - Movimentação financeira/orçamentária\n"
-                "6 - Superávit financeiro\n"
-                "7 - Retenções (INSS, IRRF, etc)\n"
-                "8 - Almoxarifado\n"
-                "9 - Problemas com o SIGEF\n"
-                "10 - Outras dúvidas"
-            )
+            response_message = MENU_INICIAL
             session.status = "AGUARDANDO_OPCAO_1"
 
         elif session.status == "AGUARDANDO_OPCAO_1":
@@ -99,6 +104,14 @@ class MachineState():
 
             elif message == "10":
                 response_message = "Você escolheu a opção de outra dúvidas. Verifique se é uma dessas: ..."
+
+            else:
+                response_message = OPCAO_INVALIDA_MENU
+                session.attempts += 1
+
+        elif session.status == "ERRO":
+            response_message = "Por favor, informe uma das opções disponíveis para que eu possa lhe ajudar."
+            session.attempts += 1
 
         else:
             session.attempts += 1
