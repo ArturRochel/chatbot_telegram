@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from .message_send_service import MessageSendService
 from app.schemas import MessageElement, UserSession
 
+# todo - MENU INICIAL
 # todo - CONTADOR DE ERROS E TRATATIVA
 # todo - ADIÇÃO DE CONTEXTO 
 # todo - CADASTRAR BOT
@@ -42,28 +43,68 @@ class MachineState():
               
             
         if session.status == "INICIAL":
-            response_message = "Olá! Bem vindo ao chat de dúvidas e consultas da SEFAZ-RN. Para iniciar o atendimento, escolha uma das opções a baixo para continuar:\n1 - Consulta de Saldo \n2 - Ressarcimento de Contas \n3 - Sistema SIGEF \n4 - Alteração de Contas \n5 - Consulta de CNPJ"
+            response_message = (
+                "🔹 **IDENTIFICAÇÃO DO ASSUNTO**\n"
+                "Olá! Bem-vindo ao chat da SEFAZ-RN. Escolha a opção que melhor representa sua dúvida:\n\n"
+                "1 - Classificação contábil e orçamentária\n"
+                "2 - Execução da despesa\n"
+                "3 - Conciliação Bancária e registros de entrada\n"
+                "4 - Pagamentos (PP, OB)\n"
+                "5 - Movimentação financeira/orçamentária\n"
+                "6 - Superávit financeiro\n"
+                "7 - Retenções (INSS, IRRF, etc)\n"
+                "8 - Almoxarifado\n"
+                "9 - Problemas com o SIGEF\n"
+                "10 - Outras dúvidas"
+            )
             session.status = "AGUARDANDO_OPCAO_1"
 
         elif session.status == "AGUARDANDO_OPCAO_1":
+
             if message == "1":
-                response_message = "Você escolheu a opção de Consulta de NFE. Por favor, envie o número da NFE que deseja consultar."
-                session.status = "AGUARDANDO_NUMERO_NFE"
+                response_message = "Você escolheu: Classificação contábil e orçamentária. Por favor, descreva sua dúvida detalhadamente."
+                session.status = "AGUARDANDO_DUVIDA_CONTABIL"
+            
             elif message == "2":
-                response_message = "Você escolheu a opção de Consulta de CNPJ. Por favor, envie o número do CNPJ que deseja consultar."
-                session.status = "AGUARDANDO_NUMERO_CNPJ"
+                response_message = "Você escolheu: Execução da despesa. Informe o tipo de processo (Empenho, Liquidação, etc) e o número, se houver."
+                session.status = "AGUARDANDO_DETALHE_DESPESA"
+
             elif message == "3":
-                response_message = "Você escolheu a opção de Ajustes SIGEFE. Por favor, descreva o ajuste que deseja realizar."
-                session.status = "AGUARDANDO_DESCRICAO_AJUSTE"
+                response_message = "Você escolheu: Conciliação Bancária. Por favor, envie o número da Guia de Recebimento (GR) ou descreva o lançamento."
+                session.status = "AGUARDANDO_CONCILIACAO"
+
             elif message == "4":
-                response_message = "Você escolheu a opção de falar com um atendente. Por favor, aguarde enquanto conectamos você com um atendente disponível."
-                session.status = "AGUARDANDO_ATENDENTE"
-            else:
-                session.attempts +=1
-                response_message = "Opção inválida. Por favor, escolha uma das opções abaixo:\n1 - Consulta de NFE\n2 - Consulta de CNPJ\n3 - Ajustes SIGEFE\n4 - Falar com um atendente"
+                response_message = "Você escolheu: Pagamentos. Informe se a sua dúvida é sobre Preparação de Pagamento (PP) ou Ordem Bancária (OB)."
+                session.status = "AGUARDANDO_TIPO_PAGAMENTO"
+
+            elif message == "5":
+                response_message = "Você escolheu: Movimentação financeira/orçamentária. Descreva qual operação deseja consultar (Repasse, Cotas, etc)."
+                session.status = "AGUARDANDO_MOVIMENTACAO"
+
+            elif message == "6":
+                response_message = "Você escolheu: Superávit financeiro. Informe se deseja solicitar apuração ou revisão do cálculo."
+                session.status = "AGUARDANDO_SUPERAVIT"
+
+            elif message == "7":
+                response_message = "Você escolheu: Retenções. Informe o tributo (INSS, IRRF, ISS) ou se a dúvida é sobre DCTFWeb."
+                session.status = "AGUARDANDO_RETENCAO"
+
+            elif message == "8":
+                response_message = "Você escolheu: Almoxarifado. Informe se a dúvida é sobre entrada, saída ou ajustes de itens."
+                session.status = "AGUARDANDO_ALMOXARIFADO"
+
+            elif message == "9":
+                response_message = "Você escolheu: Problemas com o SIGEF. Por favor, envie um print do erro ou descreva a funcionalidade com problemas."
+                session.status = "AGUARDANDO_ERRO_SIGEF"
+
+            elif message == "10":
+                response_message = "Você escolheu a opção de outra dúvidas. Verifique se é uma dessas: ..."
+
+        else:
+            session.attempts += 1
+            response_message = "Opção inválida. Por favor, escolha um número de 1 a 10 conforme o menu inicial."
         
         if origin_service == "TELEGRAM":
-            print(f"Histórico: {history} | TENTATIVAS: {session.attempts}")
             logger.success(f"Mensagem Usuário: {message} | Resposta Bot: {response_message}")
             # object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_message)
 
