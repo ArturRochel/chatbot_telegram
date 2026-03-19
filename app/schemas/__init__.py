@@ -1,5 +1,4 @@
 from .chat_schemas import (
-    UseSession,
     WebhookTelegram,
     SaidaTelegram,
     WebhookWhatsapp,
@@ -7,16 +6,18 @@ from .chat_schemas import (
 )
 from .message_schema import (MessageSendStatus)
 from .session_schema import (UserSession, FullSession, MessageElement)
+from .enum import Status, TypeUser, OriginService
 
 __all__ = [
-    "UseSession",
     "WebhookTelegram",
     "SaidaTelegram",
     "WebhookWhatsapp",
     "SaidaWhatsApp",
     "MessageSendStatus",
     "UserSession",
-    "UserHistory",
     "FullSession",
-    "MessageElement"
+    "MessageElement",
+    "Status",
+    "TypeUser",
+    "OriginService"
 ]
