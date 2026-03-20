@@ -5,11 +5,13 @@ from fastapi import Depends
 from app.repositories import RepositoryRedis
 from app.core.config import Settings, get_configs
 from app.schemas import MessageSendStatus
+from app.core import get_http_client
 
 class MessageSendService:
-    def __init__(self, repository: Annotated[RepositoryRedis, Depends()], credentials: Annotated[Settings, Depends(get_configs)]):
+    def __init__(self, repository: Annotated[RepositoryRedis, Depends()], credentials: Annotated[Settings, Depends(get_configs)], client: Annotated[httpx.AsyncClient, Depends(get_http_client)]):
         self.repository = repository
         self.credentials = credentials
+        self.client = client
 
     async def send_message_whatsapp(self, chat_id: str, message: str) -> MessageSendStatus:
         headers = {
@@ -17,7 +19,7 @@ class MessageSendService:
             "Content-Type": "application/json"
         }
 
-        paylaod = {
+        payload = {
             "messaging_product": "whatsapp",
             "to": chat_id,
             "type": "text",
@@ -27,15 +29,14 @@ class MessageSendService:
         }
         
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(self.credentials.WHATSAPP_API_URL, json=paylaod, headers=headers)
+            response = await self.client.post(self.credentials.WHATSAPP_API_URL, json=payload, headers=headers)
 
-                response.raise_for_status()
+            response.raise_for_status()
 
-                return MessageSendStatus(
-                    sucess=True,
-                    chat_id=chat_id
-                )
+            return MessageSendStatus(
+                sucess=True,
+                chat_id=chat_id
+            )
         except httpx.HTTPError as e:
             logger.error(f"Erro no envio da mensagem para a API do Whatsapp. Erro: {e}")
             return MessageSendStatus(
@@ -45,7 +46,7 @@ class MessageSendService:
             )
 
     async def send_message_telegram(self, chat_id: str, message: str) -> MessageSendStatus:
-        headears = {
+        headers = {
             "Content-Type": "application/json"
         }
 
@@ -55,15 +56,14 @@ class MessageSendService:
         }
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(f"https://api.telegram.org/bot{self.credentials.TELEGRAM_TOKEN}/sendMessage", json=payload, headers=headears)
+            response = await self.client.post(f"https://api.telegram.org/bot{self.credentials.TELEGRAM_TOKEN}/sendMessage", json=payload, headers=headers)
 
-                response.raise_for_status()
+            response.raise_for_status()
 
-                return MessageSendStatus(
-                    sucess = True,
-                    chat_id = chat_id
-                )
+            return MessageSendStatus(
+                sucess = True,
+                chat_id = chat_id
+            )
         except httpx.HTTPError as e:
             logger.error(f"Erro no envio da mensagem para a API do Telegram. Erro: {e}")
             return MessageSendStatus(

@@ -1,17 +1,12 @@
-from app.schemas import FullSession
 from loguru import logger
 from typing import Annotated
 from fastapi import Depends
 from app.repositories import RepositoryRedis
 from datetime import datetime, timezone
 from .message_send_service import MessageSendService
-from app.schemas import MessageElement, UserSession
 from app.utils import MENU_INICIAL, LIMITE_TENTATIVAS, OPCAO_INVALIDA_MENU
-from app.schemas import Status, TypeUser, OriginService
+from app.schemas import (FullSession, MessageElement, UserSession, Status, TypeUser, OriginService)
 
-# todo - SEPARAR RESPONSABILIDADES
-    # todo - _process_state
-    # todo - _send_response
 # todo - ADIÇÃO DE CONTEXTO 
 # todo - CADASTRAR BOT
 # todo - IMPLEMENTAR NGROK
@@ -23,8 +18,7 @@ class MachineState():
         self.repository = repository
         self.send_service = send_service
 
-    async def handle_update(self, chat_id: str, message: str, origin_service: OriginService):
-        response_message = "Vazio"
+    async def handle_update(self, chat_id: str, message: str, origin_service: OriginService) -> None:
 
         session_and_history = await self._get_or_create_session(chat_id=chat_id, origin_service=origin_service)
 
@@ -32,26 +26,42 @@ class MachineState():
         history = session_and_history.history
 
         history.append(MessageElement(role=TypeUser.USER, message=message))
-              
+
+        response_message = self._process_state(session=session, history=history, message=message)
+
+        await self._send_message(chat_id=chat_id, message=response_message, origin_service=origin_service)
+
+        history.append(MessageElement(role=TypeUser.BOT, message=response_message))
+
+        await self.repository.save_session_and_history(chat_id=chat_id, origin=origin_service.value, session_data=session, history_data=history)
+
+    async def _get_or_create_session(self, chat_id: str, origin_service: OriginService) -> FullSession:
+        result_session_query = await self.repository.get_session_and_history(chat_id=chat_id, origin=origin_service.value)
+
+        if result_session_query is not None:
+            session = result_session_query.session
+            history = result_session_query.history
+        else:
+            session = UserSession(
+                chat_id=chat_id,
+                status=Status.INICIAL,
+                origin_service=origin_service,
+                context="",
+                attempts=0,
+                updated_at=datetime.now(timezone.utc)
+            )
+            history = []
+
+        return FullSession(session=session, history=history)
+
+    def _process_state(self, session: UserSession, history: list[MessageElement], message: str) -> str | None:
+        response_message = "Mensagem inicial"
+        
         if session.attempts >= 3:
-            session.status = Status.INICIAL
+            session.status = Status.ERRO
             session.attempts = 0
-
-            response_erro = f"{LIMITE_TENTATIVAS} \n {MENU_INICIAL}"
-
-            #! Enviar mensagem para o usuário
-            # object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_erro)
-
-            # if not object_message.sucess:
-            #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
-            #     raise
-
-            history.append(MessageElement(role=TypeUser.BOT, message=response_erro))
-            await self.repository.save_session_and_history(chat_id=chat_id, origin=origin_service, session_data=session, history_data=history)  
-
-            return
-
-
+            response_message = f"{LIMITE_TENTATIVAS} \n {MENU_INICIAL}"
+            return response_message
 
         if session.status == Status.INICIAL:
             response_message = MENU_INICIAL
@@ -102,48 +112,20 @@ class MachineState():
                 response_message = OPCAO_INVALIDA_MENU
                 session.attempts += 1
 
-        elif session.status == Status.ERRO:
-            response_message = "Por favor, informe uma das opções disponíveis para que eu possa lhe ajudar."
-            session.attempts += 1
+        elif session.status == Status.AGUARDANDO_PERGUNTA:
+            #chamar LLM, passa session e historye e aguardar resposta
+            pass
 
-        else:
-            session.attempts += 1
-            response_message = "Opção inválida. Por favor, escolha um número de 1 a 10 conforme o menu inicial."
-        
+        return response_message
+
+    async def _send_message(self, chat_id: str, message: str, origin_service: OriginService) -> None:
         if origin_service == OriginService.TELEGRAM:
-            logger.success(f"Mensagem Usuário: {message} | Resposta Bot: {response_message}")
-            # object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=response_message)
-
-            # if not object_message.sucess:
-            #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
-            #     raise
-
+            #object_message = await self.send_service.send_message_telegram(chat_id=chat_id, message=message)
+            logger.success(f"{message}")
         else:
-            logger.success(f"Mensagem Usuário: {message} | Resposta Bot: {response_message}")
-            # object_message = await self.send_service.send_message_whatsapp(chat_id=chat_id, message=response_message)
+            logger.success(f"{message}")
+            #object_message = await self.send_service.send_message_whatsapp(chat_id=chat_id, message=message)
 
-            # if not object_message.sucess:
-            #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
-            #     raise
-
-        history.append(MessageElement(role=TypeUser.BOT, message=response_message))
-        await self.repository.save_session_and_history(chat_id=chat_id, origin=origin_service, session_data=session, history_data=history)
-
-    async def _get_or_create_session(self, chat_id: str, origin_service: str) -> FullSession:
-        result_session_query = await self.repository.get_session_and_history(chat_id=chat_id, origin_service=origin_service)
-
-        if result_session_query is not None:
-            session = result_session_query.session
-            history = result_session_query.history
-        else:
-            session = UserSession(
-                chat_id=chat_id,
-                status=Status.INICIAL,
-                origin_service=origin_service,
-                context="",
-                attempts=0,
-                updated_at=datetime.now(timezone.utc)
-            )
-            history = []
-
-        return FullSession(session=session, history=history)
+        # if not object_message.sucess:
+        #     logger.error(f"Erro ao enviar mensagem para API do {origin_service}. chat_id: {chat_id} | erro: {object_message.message_erro}")
+        #     raise 

@@ -48,11 +48,6 @@ class RepositoryRedis:
 
         return FullSession(session=UserSession(**session_data), history=history_data)
 
-    async def add_session(self, chave: str, sessao: dict):
-        sessao_string = json.dumps(sessao)
-
-        await self.redis.set(chave, sessao_string, ex=86400)
-
     async def delete_session_and_history(self, chat_id:str, origin_service:str):
         session_key = f"session:{origin}:{chat_id}"
         history_key = f"history:{origin}:{chat_id}"
@@ -67,12 +62,3 @@ class RepositoryRedis:
             logger.error(f"Erro ao excluir sessão {chave}. Erro: {e}")
             raise 
         
-
-    async def edit_session(self, chave:str, novos_dados:dict):
-        sessao_atual = await self.get_session(chave=chave)
-
-        if sessao_atual:
-            sessao_atual.update(novos_dados)
-            await self.add_session(chave, sessao_atual)
-        else:
-            logger.warning(f"Tentativa de editar uma sessão inexistente. Sessão: {chave}")
