@@ -4,7 +4,7 @@ from fastapi import Depends
 from app.repositories import RepositoryRedis
 from datetime import datetime, timezone
 from .message_send_service import MessageSendService
-from app.utils import MENU_INICIAL, LIMITE_TENTATIVAS, OPCAO_INVALIDA_MENU
+from app.utils import MENU_INICIAL, LIMITE_TENTATIVAS, OPCAO_INVALIDA_MENU, MENU_OUTRAS_DUVIDAS
 from app.schemas import (FullSession, MessageElement, UserSession, Status, TypeUser, OriginService)
 
 # todo - ADIÇÃO DE CONTEXTO 
@@ -108,10 +108,23 @@ class MachineState():
 
             elif message == "10":
                 response_message = "Você escolheu a opção de outra dúvidas. Verifique se é uma dessas: ..."
+                session.status = Status.OUTRA_DUVIDA
 
             else:
                 response_message = OPCAO_INVALIDA_MENU
                 session.attempts += 1
+
+        elif session.status == Status.AGUARDANDO_DUVIDA_CONTABIL:
+            #chamar LLM para dúvida contábil
+            pass
+
+        elif session.status == Status.AGUARDANDO_DETALHE_DESPESA:
+            # passsar para a LLM
+            pass
+
+        elif session.status == Status.OUTRA_DUVIDA:
+            response_message = MENU_OUTRAS_DUVIDAS
+            session.status = Status.AGUARDANDO_OUTRA_DUVIDA
 
         elif session.status == Status.AGUARDANDO_PERGUNTA:
             #chamar LLM, passa session e historye e aguardar resposta
