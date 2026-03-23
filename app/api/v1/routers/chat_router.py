@@ -1,6 +1,7 @@
+from sre_constants import CHARSET
 from fastapi import APIRouter, Depends, BackgroundTasks
 from typing import Annotated
-from app.schemas import WebhookTelegram, WebhookWhatsapp
+from app.schemas import WebhookTelegram, WebhookWhatsapp, OriginService
 from app.services import MachineState
 from app.utils import extract_telegram_data, extract_whatsapp_data
 
@@ -27,4 +28,16 @@ async def whatsapp_receiver(message_api: WebhookWhatsapp, background_tasks: Back
     background_tasks.add_task(process_webhook_payload, service, message_api, "WHATSAPP")
     
     return {"status": "ok"}
+
+@chat_router.post("/frontend")
+async def webhook_frontend(update: WebhookTelegram, service: Annotated[MachineState, Depends()]):
+    chat_id = update.message.chat.id
+    message_text = update.message.text 
+    
+    resposta = await service.handle_update(
+        chat_id=chat_id, 
+        message=message_text, 
+        origin_service=OriginService.TELEGRAM
+    )
+    return resposta
     

@@ -35,6 +35,8 @@ class MachineState():
 
         await self.repository.save_session_and_history(chat_id=chat_id, origin=origin_service.value, session_data=session, history_data=history)
 
+        return response_message
+
     async def _get_or_create_session(self, chat_id: str, origin_service: OriginService) -> FullSession:
         result_session_query = await self.repository.get_session_and_history(chat_id=chat_id, origin=origin_service.value)
 
@@ -43,7 +45,7 @@ class MachineState():
             history = result_session_query.history
         else:
             session = UserSession(
-                chat_id=chat_id,
+                chat_id=str(chat_id),
                 status=Status.INICIAL,
                 origin_service=origin_service,
                 context="",
@@ -55,7 +57,6 @@ class MachineState():
         return FullSession(session=session, history=history)
 
     def _process_state(self, session: UserSession, history: list[MessageElement], message: str) -> str | None:
-        response_message = "Mensagem inicial"
         
         if session.attempts >= 3:
             session.status = Status.ERRO

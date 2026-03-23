@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated
 from datetime import datetime
 
@@ -11,13 +11,17 @@ class UseSession(BaseModel):
     updated_at: Annotated[datetime, Field(description="Data e hora de quando aconteceu a ultima atualização de status")] 
 
 class ChatTelegram(BaseModel):
-    id: Annotated[str, Field(description="Identificador do chat")]
+    model_config = ConfigDict(extra="ignore")
+    id: Annotated[int | str, Field(description="Identificador do chat")]
     
 class MessageTelegram(BaseModel):
+    model_config = ConfigDict(extra="ignore")
     chat: Annotated[ChatTelegram, Field(..., description="Objeto com as informações do chat")]
     text: Annotated[str | None, Field(None, description="Texto da mensagem")]
+    message_id: int | None
     
 class WebhookTelegram(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     message: Annotated[MessageTelegram, Field(..., description="Dados da mensagem")]
 
 class SaidaTelegram(BaseModel):
